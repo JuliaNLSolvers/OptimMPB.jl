@@ -39,4 +39,4 @@ MathProgBase.getsolution(m)
 
 ```
 
-If `MathProgBase.features_available(d::Rosenbrock) = []` then numerical derivatives are used to obtain gradient information.
+If `MathProgBase.features_available(d::AbstractNLPEvaluator) = []` then numerical derivatives are used to obtain gradient information.
