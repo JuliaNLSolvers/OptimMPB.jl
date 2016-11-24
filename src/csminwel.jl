@@ -404,8 +404,8 @@ you cannot supply an analytical derivative, but it is not as robust as
 using the true derivative.
 =#
 function csminwel(fcn::Function,
-                  x0::Vector,
-                  H0::Matrix=0.5.*eye(length(x0));
+                  x0::Vector;
+                  H0::Matrix=0.5.*eye(length(x0)),
                   xtol::Real           = 1e-32, # default from Optim.jl
                   ftol::Float64        = 1e-14, # Default from csminwel
                   grtol::Real          = 1e-8,  # default from Optim.jl
