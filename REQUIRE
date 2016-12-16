@@ -1,6 +1,6 @@
 julia 0.5
-MathProgBase
+MathProgBase 0.5.8
 Optim 0.7
-ForwardDiff
+ForwardDiff 0.3
 Calculus 0.1.15
-Reexport
+Reexport 0.0.3
