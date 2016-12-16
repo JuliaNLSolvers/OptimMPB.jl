@@ -7,6 +7,6 @@ notifications:
   email: false
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.build("OptimMPB"); Pkg.test("OptimMPB"; coverage=true)'
+  - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.build("OptimMPB"); Pkg.clone("https://github.com/gragusa/CsminWel.jl.git"); Pkg.test("OptimMPB"; coverage=true)'
 after_success:
   - julia -e 'cd(Pkg.dir("OptimMPB")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder()); Codecov.submit(process_folder())'
