@@ -48,9 +48,9 @@ function MathProgBase.SolverInterface.loadproblem!(m::OptimMathProgModel, numVar
     @assert numConstr == 0  "OptimProblem can only solve unconstrained problems"
     @assert length(x_l) == length(x_u) "Lower and upper bounds have inconsistent dims"
     @assert all(x_l .<= x_u) "Lower and upper bounds have inconsistent dims"
-    if isa(m.s, Csminwel)
-      @assert (all(!isfinite(x_l)) && all(!isfinite(x_l))) "Csminwel does not accept bounds on parameters"
-    end
+    # if isa(m.s, Csminwel)
+    #   @assert (all(!isfinite(x_l)) && all(!isfinite(x_l))) "Csminwel does not accept bounds on parameters"
+    # end
     m.varLB = x_l
     m.varUB = x_u
     m.numVar = length(m.varLB)
@@ -62,7 +62,7 @@ function MathProgBase.SolverInterface.loadproblem!(m::OptimMathProgModel, numVar
     # Objective callback
     eval_f_cb(x) = s*MathProgBase.eval_f(d, x)
     # Objective gradient callback
-    gr_cb(x, grad_f) = MathProgBase.eval_grad_f(d, grad_f, x)
+    gr_cb(x, grad_f) = s*MathProgBase.eval_grad_f(d, grad_f, x)
     ad = any(map(x -> first(x), m.options) .== :autodiff)
     ng = :Grad ∈ MathProgBase.features_available(d)
     eval_grad_f_cb = getgradient(eval_f_cb, gr_cb, m.s, Val{ng}, Val{ad})
@@ -77,42 +77,14 @@ getgradient(fcn, grad_f, s::Optimizer, ::Type{Val{true}}, ::Type{Val{false}}) = 
 
 function getgradient(fcn, grad_f, s::Optimizer, ::Type{Val{false}}, ::Type{Val{true}})
   gradient(x, gr) = ForwardDiff.gradient!(gr, fcn, x)
+  gradient
 end
 
 function getgradient(fcn, grad_f, s::Optimizer, ::Type{Val{false}}, ::Type{Val{false}})
   gradient(x, gr) = gr[:] = Calculus.gradient(fcn, x)
+   gradient
 end
 
-## CSMINWEL
-
-function getgradient(fcn, grad_f, s::Csminwel, ::Type{Val{true}}, ::Type{Val{false}})
-    function gradient(x)
-      gr = similar(x)
-      grad_f(x, gr)
-      bad_grads = abs(gr) .>= 1e15
-      gr[bad_grads] = 0.0
-      return gr, any(bad_grads)
-    end
-end
-
-function getgradient(fcn, grad_f, s::Csminwel, ::Type{Val{false}}, ::Type{Val{true}})
-  function gradient(x)
-    gr = similar(x)
-    ForwardDiff.gradient!(gr, fcn, x)
-    bad_grads = abs(gr) .>= 1e15
-    gr[bad_grads] = 0.0
-    return gr, any(bad_grads)
-  end
-end
-
-function getgradient(fcn, grad_f, s::Csminwel, ::Type{Val{false}}, ::Type{Val{false}})
-  function gradient(x)
-    gr = Calculus.gradient(fcn, x)
-    bad_grads = abs(gr) .>= 1e15
-    gr[bad_grads] = 0.0
-    return gr, any(bad_grads)
-  end
-end
 
 function MathProgBase.SolverInterface.optimize!(m::OptimMathProgModel)
   out = Optim.optimize(m.inner.eval_f, m.inner.eval_grad_f, m.initial_x, m.s, OptimizationOptions(;m.options...))

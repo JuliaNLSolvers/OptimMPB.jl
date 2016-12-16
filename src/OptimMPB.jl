@@ -12,10 +12,8 @@ import Optim: Optimizer, OptimizationResults, optimize, MultivariateOptimization
               initial_state, minimizer, minimum, iterations, converged, x_converged,
               f_converged, f_tol, g_tol, g_converged, iteration_limit_reached, f_calls, method
 
-include("csminwel.jl")
 include("interface.jl")
 
-export OptimSolver, Csminwel
-
+export OptimSolver
 
 end # module
