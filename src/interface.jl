@@ -87,7 +87,7 @@ end
 
 
 function MathProgBase.SolverInterface.optimize!(m::OptimMathProgModel)
-  out = Optim.optimize(m.inner.eval_f, m.inner.eval_grad_f, m.initial_x, m.s, OptimizationOptions(;m.options...))
+  out = Optim.optimize(m.inner.eval_f, m.inner.eval_grad_f, m.initial_x, m.s, Optim.Options(;m.options...))
   m.inner.out = out
 end
 
