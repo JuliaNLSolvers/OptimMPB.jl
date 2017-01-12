@@ -28,7 +28,7 @@ type OptimMathProgModel <: MathProgBase.SolverInterface.AbstractNonlinearModel
     d::MathProgBase.SolverInterface.AbstractNLPEvaluator
     s::Optimizer
     solve_time::Float64
-    function OptimMathProgModel(s;options...)
+    function OptimMathProgModel(s; options...)
            model = new()
            model.options = options
            model.s = s.optimizer
@@ -76,19 +76,49 @@ end
 getgradient(fcn, grad_f, s::Optimizer, ::Type{Val{true}}, ::Type{Val{false}}) = grad_f
 
 function getgradient(fcn, grad_f, s::Optimizer, ::Type{Val{false}}, ::Type{Val{true}})
-  gradient(x, gr) = ForwardDiff.gradient!(gr, fcn, x)
-  gradient
+    gradient(x, gr) = ForwardDiff.gradient!(gr, fcn, x)
+    gradient
 end
 
 function getgradient(fcn, grad_f, s::Optimizer, ::Type{Val{false}}, ::Type{Val{false}})
-  gradient(x, gr) = gr[:] = Calculus.gradient(fcn, x)
-   gradient
+    gradient(x, gr) = gr[:] = Calculus.gradient(fcn, x)
+    gradient
 end
 
 
+function unbounded(m::OptimMathProgModel)
+    (all(MathProgBase.SolverInterface.getvarLB(m) == -Inf) && all(MathProgBase.SolverInterface.getvarUB(m) == +Inf)) ? true : false
+end
+
+function getoptimizer(s::Optim.Optimizer)
+    notworking = (Newton, NewtonTrustRegion)
+    for j in notworking
+        isa(s, j) && error("Optimizer $j does not work with Fminbox")
+    end
+    m = (AcceleratedGradientDescent,
+         BFGS,
+         ConjugateGradient,
+         GradientDescent,
+         LBFGS,
+         MomentumGradientDescent,
+         NelderMead)
+    out = BFGS
+    for j in m
+        isa(s, j) && (out = j; break)
+    end
+    out
+end
+
 function MathProgBase.SolverInterface.optimize!(m::OptimMathProgModel)
-  out = Optim.optimize(m.inner.eval_f, m.inner.eval_grad_f, m.initial_x, m.s, Optim.Options(;m.options...))
-  m.inner.out = out
+    if unbounded(m)
+        out = Optim.optimize(m.inner.eval_f, m.inner.eval_grad_f, m.initial_x, m.s, Optim.Options(;m.options...))
+    else
+        method = getoptimizer(m.s)
+        out = optimize(DifferentiableFunction(m.inner.eval_f, m.inner.eval_grad_f),
+                 m.initial_x, MathProgBase.SolverInterface.getvarLB(m),
+                 MathProgBase.SolverInterface.getvarUB(m), Fminbox(), optimizer = getoptimizer(m.s))
+    end
+    m.inner.out = out
 end
 
 MathProgBase.SolverInterface.getsense(m::OptimMathProgModel) = m.sense
