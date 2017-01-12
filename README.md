@@ -6,7 +6,7 @@ This package provides glue code for using algorithms in `Optim.jl` using the `Ma
 
 This simple example illustrate how things work:
 
-```
+```julia
 using OptimMPB  ## OptimMPB reexport Optim and MathProgBase
 
 type Rosenbrock <: MathProgBase.AbstractNLPEvaluator
