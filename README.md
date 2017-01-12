@@ -19,16 +19,7 @@ function MathProgBase.eval_grad_f(d::Rosenbrock, gr, x)
   gr[2] = 200*(x[2]-x[1]^2)
 end
 
-function MathProgBase.jac_structure(d::Rosenbrock)
-    Int[],Int[]
-end
-
-function MathProgBase.eval_jac_g(d::Rosenbrock, J, x)
-    nothing
-end
-
-
-s = OptimSolver(BFGS)
+s = OptimSolver(BFGS, show_trace = true, store_trace = true, extended_trace = true)
 m = MathProgBase.NonlinearModel(s)
 MathProgBase.loadproblem!(m, 2, [-1,-1], [2.,2.], :Min, Rosenbrock())
 MathProgBase.setwarmstart!(m, [0.1,-0.1])
@@ -39,4 +30,6 @@ MathProgBase.getsolution(m)
 
 ```
 
-If `MathProgBase.features_available(d::AbstractNLPEvaluator) = []` then numerical derivatives are used to obtain gradient information.
+If there some of the variables are bounded, the solver use `Fminbox` to deal with the bounds. If instead all the variables are unbounded, i.e. `all(getvarLB(m))==-Inf` and `all(getvarUB(m))==+Inf` then the regular solver is used.
+
+If `MathProgBase.features_available(d::AbstractNLPEvaluator) = []` then numerical derivatives are used to obtain gradient information. To use automatic differentiation pass `autodiff=true` to the `OptimSolver` constructor call.
