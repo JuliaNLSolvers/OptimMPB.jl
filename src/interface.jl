@@ -42,6 +42,10 @@ MathProgBase.SolverInterface.loadproblem!(m::OptimMathProgModel, numVar::Int, x_
                       d::MathProgBase.SolverInterface.AbstractNLPEvaluator) =
                       MathProgBase.SolverInterface.loadproblem!(m, numVar, 0, x_l, x_u, [], [], sense, d)
 
+MathProgBase.SolverInterface.loadproblem!(m::OptimMathProgModel, numVar::Int,  sense::Symbol,
+                      d::MathProgBase.SolverInterface.AbstractNLPEvaluator) =
+                      MathProgBase.SolverInterface.loadproblem!(m, numVar, 0, [-Inf for j in 1:numVar], [+Inf for j in numVar], [], [], sense, d)
+
 function MathProgBase.SolverInterface.loadproblem!(m::OptimMathProgModel, numVar::Integer, numConstr::Integer,
                       x_l, x_u, g_lb, g_ub, sense::Symbol, d::MathProgBase.SolverInterface.AbstractNLPEvaluator)
 
@@ -114,7 +118,7 @@ function MathProgBase.SolverInterface.optimize!(m::OptimMathProgModel)
         out = Optim.optimize(m.inner.eval_f, m.inner.eval_grad_f, m.initial_x, m.s, Optim.Options(;m.options...))
     else
         method = getoptimizer(m.s)
-        out = optimize(DifferentiableFunction(m.inner.eval_f, m.inner.eval_grad_f),
+        out = optimize(OnceDifferentiable(m.inner.eval_f, m.inner.eval_grad_f),
                  m.initial_x, MathProgBase.SolverInterface.getvarLB(m),
                  MathProgBase.SolverInterface.getvarUB(m), Fminbox(), optimizer = getoptimizer(m.s))
     end
