@@ -10,14 +10,14 @@ end
 
 MathProgBase.NonlinearModel(s::OptimSolver) = OptimMathProgModel(s; s.options...)
 
-type OptimProblem
+mutable struct OptimProblem
   out
   eval_f::Function
   eval_grad_f::Function
   sense::Symbol
 end
 
-type OptimMathProgModel <: MathProgBase.SolverInterface.AbstractNonlinearModel
+mutable struct OptimMathProgModel <: MathProgBase.SolverInterface.AbstractNonlinearModel
     options
     inner::OptimProblem
     numVar::Int
@@ -46,27 +46,27 @@ MathProgBase.SolverInterface.loadproblem!(m::OptimMathProgModel, numVar::Int,  s
                       d::MathProgBase.SolverInterface.AbstractNLPEvaluator) =
                       MathProgBase.SolverInterface.loadproblem!(m, numVar, 0, [-Inf for j in 1:numVar], [+Inf for j in numVar], [], [], sense, d)
 
-function MathProgBase.SolverInterface.loadproblem!(m::OptimMathProgModel, numVar::Integer, numConstr::Integer,
-                      x_l, x_u, g_lb, g_ub, sense::Symbol, d::MathProgBase.SolverInterface.AbstractNLPEvaluator)
+function MathProgBase.SolverInterface.loadproblem!(m::OptimMathProgModel, 
+                                                   numVar::Integer, 
+                                                   numConstr::Integer,
+                                                   x_l, x_u, g_lb, g_ub, 
+                                                   sense::Symbol, 
+                                                   d::MathProgBase.SolverInterface.AbstractNLPEvaluator)
 
     @assert numConstr == 0  "OptimProblem can only solve unconstrained problems"
     @assert length(x_l) == length(x_u) "Lower and upper bounds have inconsistent dims"
     @assert all(x_l .<= x_u) "Lower and upper bounds have inconsistent dims"
-    # if isa(m.s, Csminwel)
-    #   @assert (all(!isfinite(x_l)) && all(!isfinite(x_l))) "Csminwel does not accept bounds on parameters"
-    # end
-    m.varLB = x_l
-    m.varUB = x_u
-    m.numVar = length(m.varLB)
+    m.varLB, m.varUB = x_l, x_u
+    m.numVar = length(x_l)
     @assert m.numVar == length(m.varUB)
     m.initial_x = zeros(m.numVar)
-    @assert sense == :Min || sense == :Max
-    s = (sense == :Min) ? 1 : -1
+    @assert sense == :Min || sense == :Max    
+    s = (sense == :Min) ? 1 : -1    
     m.sense = s
     # Objective callback
     eval_f_cb(x) = s*MathProgBase.eval_f(d, x)
     # Objective gradient callback
-    gr_cb(x, grad_f) = s*MathProgBase.eval_grad_f(d, grad_f, x)
+    gr_cb(grad_f, x) = s*MathProgBase.eval_grad_f(d, grad_f, x)
     ad = any(map(x -> first(x), m.options) .== :autodiff)
     ng = :Grad ∈ MathProgBase.features_available(d)
     eval_grad_f_cb = getgradient(eval_f_cb, gr_cb, m.s, Val{ng}, Val{ad})
@@ -80,12 +80,12 @@ end
 getgradient(fcn, grad_f, s::Optimizer, ::Type{Val{true}}, ::Type{Val{false}}) = grad_f
 
 function getgradient(fcn, grad_f, s::Optimizer, ::Type{Val{false}}, ::Type{Val{true}})
-    gradient(x, gr) = ForwardDiff.gradient!(gr, fcn, x)
+    gradient(gr, x) = ForwardDiff.gradient!(gr, fcn, x)
     gradient
 end
 
 function getgradient(fcn, grad_f, s::Optimizer, ::Type{Val{false}}, ::Type{Val{false}})
-    gradient(x, gr) = gr[:] = Calculus.gradient(fcn, x)
+    gradient(gr, x) = gr[:] = Calculus.gradient(fcn, x)
     gradient
 end
 
@@ -115,7 +115,10 @@ end
 
 function MathProgBase.SolverInterface.optimize!(m::OptimMathProgModel)
     if unbounded(m)
-        out = Optim.optimize(m.inner.eval_f, m.inner.eval_grad_f, m.initial_x, m.s, Optim.Options(;m.options...))
+        out = Optim.optimize(m.inner.eval_f, 
+                             m.inner.eval_grad_f, 
+                             m.initial_x, m.s, 
+                             Optim.Options(;m.options...))
     else
         method = getoptimizer(m.s)
         out = optimize(OnceDifferentiable(m.inner.eval_f, m.inner.eval_grad_f),

@@ -13,7 +13,7 @@ function MathProgBase.eval_grad_f(d::EX1, gr, x)
   gr[2] = -2.0 * (17.0 - x[2])
 end
 
-function grad_f(x, gr)
+function grad_f(gr, x)
   gr[1] = -10.0 * (309.0 - 5.0 * x[1])
   gr[2] = -2.0 * (17.0 - x[2])
 end
@@ -119,19 +119,19 @@ end
 
 
 ## CSMINWEL
-using CsminWel
-s = OptimSolver(Csminwel, show_trace = true, store_trace = true, extended_trace = true)
-m = MathProgBase.NonlinearModel(s)
-MathProgBase.loadproblem!(m, 2, [-Inf,-Inf], [+Inf,+Inf], :Min, EX1())
-MathProgBase.setwarmstart!(m, [0.1,-0.1])
-MathProgBase.optimize!(m)
-@test Optim.minimizer(m.inner.out) == MathProgBase.getsolution(m)
-@test Optim.minimum(m.inner.out) == MathProgBase.getobjval(m)
-@test MathProgBase.getvarLB(m) == [-Inf, -Inf]
-@test MathProgBase.getvarUB(m) == [+Inf, +Inf]
-@test MathProgBase.status(m) == Optim.converged(m.inner.out)
-@test norm(Optim.minimizer(m.inner.out) - [309.0 / 5.0, 17.0]) < 0.01
-@test Optim.g_converged(m.inner.out)
-@test MathProgBase.getsense(m) == 1
-@test MathProgBase.numvar(m) == 2
-@test MathProgBase.numconstr(m) == 0
+# using CsminWel
+# s = OptimSolver(Csminwel, show_trace = true, store_trace = true, extended_trace = true)
+# m = MathProgBase.NonlinearModel(s)
+# MathProgBase.loadproblem!(m, 2, [-Inf,-Inf], [+Inf,+Inf], :Min, EX1())
+# MathProgBase.setwarmstart!(m, [0.1,-0.1])
+# MathProgBase.optimize!(m)
+# @test Optim.minimizer(m.inner.out) == MathProgBase.getsolution(m)
+# @test Optim.minimum(m.inner.out) == MathProgBase.getobjval(m)
+# @test MathProgBase.getvarLB(m) == [-Inf, -Inf]
+# @test MathProgBase.getvarUB(m) == [+Inf, +Inf]
+# @test MathProgBase.status(m) == Optim.converged(m.inner.out)
+# @test norm(Optim.minimizer(m.inner.out) - [309.0 / 5.0, 17.0]) < 0.01
+# @test Optim.g_converged(m.inner.out)
+# @test MathProgBase.getsense(m) == 1
+# @test MathProgBase.numvar(m) == 2
+# @test MathProgBase.numconstr(m) == 0
