@@ -1,10 +1,10 @@
 ## Glue code for Optim.jl and csminwel.jl
-immutable OptimSolver <: MathProgBase.SolverInterface.AbstractMathProgSolver
+struct OptimSolver <: MathProgBase.SolverInterface.AbstractMathProgSolver
     optimizer
     options
 end
 
-function OptimSolver{T<:Optimizer}(::Type{T}; kwargs...)
+function OptimSolver(::Type{T}; kwargs...) where T<:Optimizer
   OptimSolver(T(), kwargs)
 end
 
