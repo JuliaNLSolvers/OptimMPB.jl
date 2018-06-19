@@ -9,7 +9,7 @@ This simple example illustrate how things work:
 ```julia
 using OptimMPB  ## OptimMPB reexport Optim and MathProgBase
 
-type Rosenbrock <: MathProgBase.AbstractNLPEvaluator
+mutable struct Rosenbrock <: MathProgBase.AbstractNLPEvaluator
 end
 
 MathProgBase.features_available(d::Rosenbrock) = [:Grad]

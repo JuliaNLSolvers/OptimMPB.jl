@@ -2,7 +2,7 @@ using OptimMPB
 using Base.Test
 
 
-type EX1 <: MathProgBase.AbstractNLPEvaluator end
+mutable struct EX1 <: MathProgBase.AbstractNLPEvaluator end
 
 
 MathProgBase.features_available(d::EX1) = [:Grad]
@@ -85,7 +85,7 @@ end
 
 
 
-type EX2 <: MathProgBase.AbstractNLPEvaluator end
+mutable struct EX2 <: MathProgBase.AbstractNLPEvaluator end
 
 MathProgBase.features_available(d::EX2) = []
 MathProgBase.eval_f(d::EX2, x) = (309.0 - 5.0 * x[1])^2 + (17.0 - x[2])^2
